@@ -57,9 +57,9 @@ void *listener(void *arg)
         sem_wait(sem_empty);
         pthread_mutex_lock(&lock);
 
-        buf[in] = s;
-        in = (in + 1) % MAX_REQUEST;
-        printf("[listener] added fd=%d at index=%d\n", s, in);
+        buf[in++] = s;
+        //in = (in + 1) % MAX_REQUEST;
+        printf("[listener] added fd=%d at index=%d\n", s, in - 1);
 
         pthread_mutex_unlock(&lock);
         sem_post(sem_full);
@@ -75,10 +75,10 @@ void *worker(void *arg)
         sem_wait(sem_full);
         pthread_mutex_lock(&lock);
 
-        int s = buf[out];
-        out = (out + 1) % MAX_REQUEST;
+        int s = buf[--in];
+        //out = (out + 1) % MAX_REQUEST;
 
-        printf("[worker %lu] handling socket %d\n", pthread_self(), s);
+        printf("[worker %lu] handling socket %d at %d\n", pthread_self(), s, in);
 
         pthread_mutex_unlock(&lock);
         sem_post(sem_empty);

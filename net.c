@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <arpa/inet.h>
 #include <time.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 int CRASH = 0;
 
 int gettid() {
-	return (int)pthread_self();
+	return (int)pthread_self() - getpid();
 }
 
 char *get_mime_type(char *name) {
@@ -96,7 +97,7 @@ int process(int fd) {
 	int peer_len = sizeof(peer);
 	FILE *f;
 	
-	srand(getpid() + time(NULL));
+	srand((int)pthread_self() + time(NULL));
 	if(CRASH > 0 && rand() % 100 < CRASH) {
 		printf("Thread [pid %d, tid %d] terminated!\n", getpid(), gettid());
 		close(fd);
