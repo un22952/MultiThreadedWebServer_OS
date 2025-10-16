@@ -101,19 +101,24 @@ void *worker(void *arg)
 void threadControl(pthread_t *workers) {
     // keep monitoring
     while (1) {
+        
         for (int i = 0; i < numThread; ++i) {
             // identify dead threads
             int rc = pthread_kill(workers[i], 0);
             if (rc == ESRCH) {     
-                // recreate dead threads           
+                // recreate dead threads    
+                printf("Worker[%d] is dead. Recreating...\n", i);       
                 int r = pthread_create(&workers[i], NULL, worker, NULL);
-                if (r == 0)
+                if (r == 0) {
                     printf("Recreated worker[%d]\n", i);
+                    
+                }
                 else
                     fprintf(stderr, "Recreate failed: %d\n", r);
             }
         }
-        sleep(1);   // avoid spin
+        sleep(1);  // avoid spin
+        
     }
 }
 

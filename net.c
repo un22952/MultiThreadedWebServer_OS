@@ -16,7 +16,7 @@
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 
-int CRASH = 70;
+int CRASH = 0;
 
 int gettid() {
 	return (unsigned long)pthread_self() - getpid();
