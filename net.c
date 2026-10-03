@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <arpa/inet.h>
 #include <time.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 int CRASH = 0;
 
 int gettid() {
-	return (int)pthread_self();
+	return (unsigned long)pthread_self() - getpid();
 }
 
 char *get_mime_type(char *name) {
@@ -93,14 +94,15 @@ int process(int fd) {
 	char cwd[1024];
 	int len;
 	struct sockaddr_in peer;
-	int peer_len = sizeof(peer);
+	socklen_t peer_len = sizeof(peer);
 	FILE *f;
 	
-	srand(getpid() + time(NULL));
+	srand((unsigned long)pthread_self() + time(NULL));
 	if(CRASH > 0 && rand() % 100 < CRASH) {
 		printf("Thread [pid %d, tid %d] terminated!\n", getpid(), gettid());
 		close(fd);
 		pthread_exit(NULL);
+		
 	}
 
 	f = fdopen(fd, "a+");
@@ -111,7 +113,7 @@ int process(int fd) {
 	}
 
 	if(f == NULL) {
-		printf("fileopen error: %s\n", fd);
+		printf("fileopen error: %d\n", fd);
 		return -1;
 	}
 
@@ -119,6 +121,7 @@ int process(int fd) {
 		fclose(f);
 		return -1;
 	}
+
 
 	if(getpeername(fileno(f), (struct sockaddr*) &peer, &peer_len) != -1) {
 		printf("[pid %d, tid %d] (from %s:%d) URL: %s", getpid(), gettid(),inet_ntoa(peer.sin_addr), (int)ntohs(peer.sin_port), buf);
@@ -180,11 +183,11 @@ int process(int fd) {
 
 					fprintf(f, "<A HREF=\"%s%s\">", de->d_name, S_ISDIR(statbuf.st_mode) ? "/" : "");
 					fprintf(f, "%s%s", de->d_name, S_ISDIR(statbuf.st_mode) ? "/</A>" : "</A> ");
-					if (strlen(de->d_name) < 32) fprintf(f, "%*s", 32 - strlen(de->d_name), "");
+					if (strlen(de->d_name) < 32) fprintf(f, "%*s",(int) (32 - strlen(de->d_name)), "");
 						if (S_ISDIR(statbuf.st_mode)) {
 							fprintf(f, "%s\r\n", timebuf);
 						} else {
-							fprintf(f, "%s %10d\r\n", timebuf, statbuf.st_size);
+							fprintf(f, "%s %10lld\r\n", timebuf, statbuf.st_size);
 						}
 					}
 					closedir(dir);
